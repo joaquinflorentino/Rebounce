@@ -6,6 +6,7 @@ public class Spawner : MonoBehaviour
 {
     private Player playerScript;
     private int numberOfTargetsToSpawn;
+    private int numberOfTargets;
 
     [SerializeField]
     private GameObject target;
@@ -44,6 +45,10 @@ public class Spawner : MonoBehaviour
             Spawn();
         }
     }
+
+    public int GetNumberOfTargets() {
+        return numberOfTargets;
+    }
     
     // Start is called before the first frame update
     void Start()
@@ -58,6 +63,7 @@ public class Spawner : MonoBehaviour
             if (playerScript.IsSlowerThanThreshold()) {
                 playerScript.ResetNumberOfTargetsCleared();
                 numberOfTargetsToSpawn = (int)(Random.Range(2f, 6f));
+                numberOfTargets = numberOfTargetsToSpawn;
                 SpawnWave(numberOfTargetsToSpawn);
             }
         }

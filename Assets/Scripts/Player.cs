@@ -23,6 +23,7 @@ public class Player : MonoBehaviour
     private SpriteRenderer arrowSpriteRenderer;
     private float boostTimeThreshold = 0.8f;
     private AudioSource audioSource;
+    private bool allowMouseFollow = true;
 
     [SerializeField]
     private GameObject resultsCanvasObject;
@@ -107,22 +108,32 @@ public class Player : MonoBehaviour
             isLaunched = false;
             combo = 0;
             if (!isLaunched && !isStopped && Time.timeScale == 1f) {
-                GetComponent<Collider2D>().enabled = false;
-                Vector3 mousePosition = Input.mousePosition;
-                mousePosition = Camera.main.ScreenToWorldPoint(mousePosition);
-                transform.position = Vector2.Lerp(transform.position, mousePosition, 0.1f);
-                transform.position = new Vector2(Mathf.Clamp(transform.position.x, -7.5f, 7.5f), Mathf.Clamp(transform.position.y, -3.5f, 3.5f));
-                isFollowingMouse = true;
+                if (allowMouseFollow) {
+                    GetComponent<Collider2D>().enabled = false;
+                    Vector3 mousePosition = Input.mousePosition;
+                    mousePosition = Camera.main.ScreenToWorldPoint(mousePosition);
+                    transform.position = Vector2.Lerp(transform.position, mousePosition, 0.1f);
+                    transform.position = new Vector2(Mathf.Clamp(transform.position.x, -7.5f, 7.5f), Mathf.Clamp(transform.position.y, -3.5f, 3.5f));
+                    isFollowingMouse = true;
+                }
+            }
+
+            if (GetNumberOfTargetsCleared() == GameObject.Find("Spawner").GetComponent<Spawner>().GetNumberOfTargets()) {
+                allowMouseFollow = true;
+            }
+
+            if (!allowMouseFollow && !isFollowingMouse) {
+                arrow.SetActive(true);
             }
 
             if (Input.GetMouseButtonDown(0)) {
-                if (!isFollowingMouse && isStopped) {
+                if (!isFollowingMouse && isStopped || !allowMouseFollow) {
                     forceMultiplier = 1f;
                     hasStartedLaunch = true;
                     startTime = Time.time;
                     GetComponent<Collider2D>().enabled = true;
                 }
-                else if (isFollowingMouse && !isStopped) {
+                else if (isFollowingMouse && !isStopped && allowMouseFollow) {
                     rb.velocity = Vector2.zero;
                     isStopped = true;
                     isFollowingMouse = false;
@@ -130,11 +141,13 @@ public class Player : MonoBehaviour
                     arrowSpriteRenderer.sprite = arrowSprite;
                 }
             }
+
             if (hasStartedLaunch && Time.time - startTime > boostTimeThreshold) {
                 arrowSpriteRenderer.sprite = doubleArrowSprite;
             }
+
             if (Input.GetMouseButtonUp(0)) {
-                if (!isFollowingMouse && isStopped && hasStartedLaunch) {
+                if (!isFollowingMouse && isStopped && hasStartedLaunch || !allowMouseFollow) {
                     if (Time.time - startTime > boostTimeThreshold) {
                         forceMultiplier = 1.5f;
                         rb.drag = 1.7f;
@@ -148,6 +161,7 @@ public class Player : MonoBehaviour
                     isStopped = false;
                     hasStartedLaunch = false;
                     arrow.SetActive(false);
+                    allowMouseFollow = false;
                 }
             }
         }
