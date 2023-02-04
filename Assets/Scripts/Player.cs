@@ -24,6 +24,8 @@ public class Player : MonoBehaviour
     private float boostTimeThreshold = 0.8f;
     private AudioSource audioSource;
     private bool allowMouseFollow = true;
+    private bool inverted;
+    private bool mouseWasPressedDownToLaunch;
 
     [SerializeField]
     private GameObject resultsCanvasObject;
@@ -75,7 +77,13 @@ public class Player : MonoBehaviour
 
     private void LookTowardMouse() {
         Vector2 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition + Vector3.forward * 10f);
-        float angle = AngleBetweenTwoPoints(transform.position, mousePosition);
+        float angle = 0;
+        if (inverted) {
+            angle = AngleBetweenTwoPoints(-transform.position, mousePosition);
+        }
+        else {
+            angle = AngleBetweenTwoPoints(transform.position, mousePosition);
+        }
 
         if (Vector3.Distance(mousePosition, transform.position) > 1) {
             transform.rotation = Quaternion.Euler(new Vector3(0f, 0f, angle));
@@ -132,6 +140,7 @@ public class Player : MonoBehaviour
                     hasStartedLaunch = true;
                     startTime = Time.time;
                     GetComponent<Collider2D>().enabled = true;
+                    mouseWasPressedDownToLaunch = true;
                 }
                 else if (isFollowingMouse && !isStopped && allowMouseFollow) {
                     rb.velocity = Vector2.zero;
@@ -147,7 +156,8 @@ public class Player : MonoBehaviour
             }
 
             if (Input.GetMouseButtonUp(0)) {
-                if (!isFollowingMouse && isStopped && hasStartedLaunch || !allowMouseFollow) {
+                if (!isFollowingMouse && isStopped && hasStartedLaunch && mouseWasPressedDownToLaunch || !allowMouseFollow && mouseWasPressedDownToLaunch) {
+                    mouseWasPressedDownToLaunch = false;
                     if (Time.time - startTime > boostTimeThreshold) {
                         forceMultiplier = 1.5f;
                         rb.drag = 1.7f;
@@ -156,7 +166,13 @@ public class Player : MonoBehaviour
                     Vector2 dir = clickPosition - transform.position;
                     dir = dir.normalized;
                     rb.velocity = Vector2.zero;
-                    rb.AddForce(dir * (force * forceMultiplier), ForceMode2D.Impulse);
+
+                    if (inverted) {
+                        rb.AddForce(-dir * (force * forceMultiplier), ForceMode2D.Impulse);
+                    }
+                    else {
+                        rb.AddForce(dir * (force * forceMultiplier), ForceMode2D.Impulse);
+                    }
                     isLaunched = true;
                     isStopped = false;
                     hasStartedLaunch = false;
